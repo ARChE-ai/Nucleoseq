@@ -1,0 +1,30 @@
+seed: 42
+
+run:
+  output_root: "runs/satellite_shuffle"
+  experiment_name: "single_model_fasta"
+
+model:
+  model_path: "/chemin/vers/ton_modele.h5"
+  compile: false
+
+input:
+  fasta_path: "/chemin/vers/tes_satellites.fasta"
+  max_entries: null
+
+prediction:
+  winsize: 2001
+  target_length: 3000
+  output_idx: 2
+  batch_size: 128
+  smooth_window: 10
+
+shuffle:
+  n_perm: 1000
+
+plots:
+  hist_bins: 40
+  show_perm_envelope: true
+
+save:
+  save_perm_profiles: false

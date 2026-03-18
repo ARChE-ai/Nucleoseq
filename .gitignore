@@ -1,0 +1,24 @@
+# python
+__pycache__/
+*.ipynb_checkpoints/
+archives/
+
+# --- BigWig / genomics ---
+*.bw
+*.bigwig
+*.csv
+*.fasta
+
+
+# --- NumPy archives ---
+*.npz
+*.npy
+*.mmap
+
+py38.tar.gz
+*.tar.gz
+
+
+JASPAR2026_CORE_non-redundant_pfms_meme.txt
+data/
+demo/

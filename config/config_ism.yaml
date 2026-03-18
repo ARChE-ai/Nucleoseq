@@ -1,0 +1,13 @@
+model: /home/maxime/Nucleoseq/demo/test/MNase_17chroms_CORRECTED_1.5prctCovered_globalWeightsOptim_20260303_142239
+chr: [13, 14, 15, 16, 17]
+
+seq_dir: demo/sequences/
+output_file: "ISM_alienware"
+
+pos: 3000000
+# size: 500000
+batch_size: 2048
+gpu: 0
+
+winsize: 2001
+write_batch: 5000000

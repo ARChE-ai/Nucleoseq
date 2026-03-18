@@ -1,0 +1,21 @@
+mnase:
+  mut_bw: /home/maxime/data/mnase/train/full_genome_rmdense_A_16/full_genome_rmdense_1/mutasome.bw
+  pred_bw: /home/maxime/data/mnase/train/full_genome_rmdense_A_16/full_genome_rmdense_1/prediction.bw
+  lab_bw: /home/maxime/data/mnase/labels/sparse_A_16_gaussiansmoothed.bw
+
+chemical:
+  mut_bw: /home/maxime/data/Chemical/train/chemicalNCP_290125_masklight_ver0/Chemical_mutasome_mm10.bw
+  pred_bw: /home/maxime/data/Chemical/train/chemicalNCP_290125_masklight_ver0/Chemical_prediction_mm10.bw
+  lab_bw: /home/maxime/GSM2183909_Chemical_NCPscore_mm10_SMOOTHED.bw
+
+cross:
+  mut_bw: /home/maxime/cross_mut.bw
+
+wavelets:
+  wavelets_bw: /home/maxime/data/wavelets/wavelets_lab_A16.bw
+  
+genomics:
+  dnase_bw: /home/maxime/data/dnase/labels/DNase_ENCFF672DJH.bw
+  atac:
+    replicate1_bw: /home/maxime/data/atac/GSM3719303_ATAC_1_RPKM.bw
+    replicate2_bw: /home/maxime/data/atac/GSM3719304_ATAC_2_RPKM.bw

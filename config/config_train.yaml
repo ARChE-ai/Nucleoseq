@@ -1,0 +1,58 @@
+# Example configuration file for training and inference
+# -----------------------------------------------------
+# This file provides example parameters to reproduce
+# nucleosome occupancy prediction and ISM analysis.
+
+# -----------------------------------------------------
+# GENERAL
+# -----------------------------------------------------
+project: Nucleoseq
+experiment_name: "Chemical_17chroms_CORRECTED_global_weights"
+output_dir: "demo/test"
+gpu_index: 0  # index of the GPU used (if available)
+workers: 4
+# -----------------------------------------------------
+# DATA PATHS
+# -----------------------------------------------------
+data:
+  # One-hot encoded sequences (npz files named chr{N}.npz)
+  seq_path: "demo/sequences/mm10.bw"
+
+  # Training target: bigWig coverage files
+  label_path: "demo/labels/GSM2183909_Chemical_NCPscore_mm10_SMOOTHED.bw"
+
+  # Masks
+  mask_train : ["demo/artifacts/mappable_2001b.bw","demo/artifacts/notdefinedseq_2001b.bw", "demo/artifacts/chemical_1.5prctCounts_2001b.bw"]
+
+
+# -----------------------------------------------------
+# MODEL
+# -----------------------------------------------------
+model:
+  name: "Chemical_5H" 
+  winsize: 2001
+  batch_size: 512
+  epochs: 100
+  learning_rate: 0.001
+  loss: "mae_cor"
+  metrics: ["mae", "correlate"]
+  steps: [-500, -250, 0, 250, 500]
+
+# -----------------------------------------------------
+# TRAINING STRATEGY
+# -----------------------------------------------------
+training:
+  train_chr: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  val_chr: [18]
+  apply_weights: "auto"
+  training_distance_between_windows: 300
+  validation_distance_between_windows: 100
+
+
+# -----------------------------------------------------
+# NOTES
+# -----------------------------------------------------
+# - Paths are relative to the repository root.
+# - Model and losses are defined in `modeles.py` and `losses.py`.
+# - ISM computation is performed via `mutasome_opt.py`.
+# - For reproducibility, specify a fixed random seed in both Python and TensorFlow.

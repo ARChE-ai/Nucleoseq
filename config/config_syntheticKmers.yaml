@@ -1,0 +1,17 @@
+model_path: "/home/maxime/Nucleoseq/demo/test/Chemical_17chroms_CORRECTED_global_weights_20260304_205232/best.h5"
+output_idx: 2
+run_dir: #Default is model folder
+make_plot: True
+
+#Parameters
+monomer_size: 4 # K
+repetitions_number: [1, 2, 4, 6, 8, 10]
+predict_size: 1000
+
+
+#Background
+N_bg: 1000
+seq_path: "/home/maxime/Nucleoseq/demo/sequences/chr1.npz"
+bg_chrom: "chr1"
+lower_bound: 5_000_000
+upper_bound: null
