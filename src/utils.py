@@ -289,13 +289,13 @@ def space_random_opt(n: int, space: int, upper_bound: int, lower_bound: int = 0)
 
 
 def loadbar(x, n, t0=0, strmore=""):
-    print(
-        f"|{'=' * (int(30 * x / (n - 1)) - 1)}>{'.' * int(30 * (1 - (x / (n - 1))))}|\
-    {x + 1}/{n} {time.time() - t0:.2f}s"
-        + strmore,
-        end="\r",
-        flush=True,
-    )
+    progress = x / max(1, n - 1)
+    filled = int(30 * progress)
+    bar = ('=' * max(0, filled - 1) + ('>' if filled > 0 else '')).ljust(30, '.')
+    
+    elapsed = time.time() - t0
+    # \033[K clears to the end of the line so trailing characters get erased
+    print(f"\r|{bar}| {x + 1}/{n} {elapsed:.2f}s {strmore}\033[K", end="", flush=True)
 
 
 def vcorrcoef(X, Y):
