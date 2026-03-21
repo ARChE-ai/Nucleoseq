@@ -7,12 +7,14 @@ import math
 import shutil
 from datetime import datetime
 from pathlib import Path
+import time
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yaml
 import tensorflow as tf
+from Bio import SeqIO
 
 import utils as mf
 
@@ -23,10 +25,13 @@ def load_config(config_path: str) -> dict:
 
 
 def make_run_dir(cfg: dict) -> Path:
-    output_root = Path(cfg["run"]["output_root"])
-    experiment_name = cfg["run"]["experiment_name"]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = output_root / f"{timestamp}_{experiment_name}"
+    if cfg.get("output_root") is None:
+        output_root = Path(cfg["model_path"]).parent
+    else:
+        output_root = Path(cfg["output_root"])
+    experiment_name = cfg.get("experiment_name", "synthetic_satellites")
+    run_dir = output_root / f"{experiment_name}_{timestamp}"
     run_dir.mkdir(parents=True, exist_ok=False)
 
     for subdir in ["raw", "plots", "logs"]:
@@ -49,9 +54,7 @@ def sanitize_name(name: str) -> str:
     return "".join(keep).strip("_")
 
 
-def set_seed(seed: int | None) -> None:
-    if seed is None:
-        return
+def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
@@ -85,37 +88,24 @@ def smooth(x: np.ndarray, window: int = 10) -> np.ndarray:
 def get_amplitude(profile: np.ndarray) -> float:
     return float(np.max(profile) - np.min(profile))
 
+def shuffle_sequence(seq: str, k: int = 3) -> str:
+    import ushuffle
+    if k <= 1:
+        arr = np.array(list(seq))
+        np.random.shuffle(arr)
+        return "".join(arr)
+    
+    seq_bytes = seq.encode('utf-8')
+    shuffled_bytes = ushuffle.shuffle(seq_bytes, k)
+    return shuffled_bytes.decode('utf-8')
 
-def shuffle_sequence(seq: str, rng: np.random.Generator) -> str:
-    arr = np.array(list(seq))
-    rng.shuffle(arr)
-    return "".join(arr.tolist())
-
-
-def read_fasta(fasta_path: str) -> list[dict]:
+def read_fasta(fasta_path: str) -> list:
     entries = []
-    header = None
-    seq_chunks = []
-
-    with open(fasta_path, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-
-            if line.startswith(">"):
-                if header is not None:
-                    seq = "".join(seq_chunks).upper()
-                    entries.append({"header": header, "sequence": seq})
-                header = line[1:].strip()
-                seq_chunks = []
-            else:
-                seq_chunks.append(line)
-
-    if header is not None:
-        seq = "".join(seq_chunks).upper()
-        entries.append({"header": header, "sequence": seq})
-
+    for record in SeqIO.parse(fasta_path, "fasta"):
+        entries.append({
+            "header": record.description, 
+            "sequence": str(record.seq).upper()
+        })
     return entries
 
 
@@ -162,7 +152,7 @@ def predict_profile(
     return np.asarray(profile).ravel()
 
 def load_model_from_config(cfg: dict):
-    model_path = cfg["model"]["model_path"]
+    model_path = cfg["model_path"]
     return tf.keras.models.load_model(model_path, compile=False)
 
 
@@ -192,11 +182,10 @@ def plot_histogram(
     perm_amps: np.ndarray,
     seq_name: str,
     outpath: Path,
-    bins: int = 40,
 ) -> None:
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.hist(perm_amps, bins=bins, alpha=0.8)
-    ax.axvline(native_amp, linewidth=2)
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.hist(perm_amps, bins="auto", alpha=0.8)
+    ax.axvline(native_amp, linewidth=2, color="r")
     ax.set_title(f"{seq_name} - native vs shuffled amplitudes")
     ax.set_xlabel("Amplitude")
     ax.set_ylabel("Count")
@@ -209,7 +198,7 @@ def plot_profile(
     native_profile: np.ndarray,
     seq_name: str,
     outpath: Path,
-    perm_profiles: np.ndarray | None = None,
+    perm_profiles=None,
     show_perm_envelope: bool = True,
 ) -> None:
     fig, ax = plt.subplots(figsize=(10, 4))
@@ -222,15 +211,15 @@ def plot_profile(
         p95 = np.percentile(perm_profiles, 95, axis=0)
 
         ax.fill_between(x, p05, p95, alpha=0.25, label="Shuffled 5-95%")
-        ax.plot(x, p50, linewidth=1.5, alpha=0.9, label="Shuffled median")
+        ax.plot(x, p50, linewidth=1.5, alpha=0.9, label="Shuffled median", color="k")
 
-    ax.plot(x, native_profile, linewidth=2, label="Native")
+    ax.plot(x, native_profile, linewidth=2, label="Native", color="r")
     ax.set_title(f"{seq_name} - prediction profile")
     ax.set_xlabel("Window index")
     ax.set_ylabel("Prediction")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(outpath, dpi=200)
+    mf.savefig(outpath, fig)
     plt.close(fig)
 
 
@@ -238,16 +227,16 @@ def analyze_sequence(
     model,
     header: str,
     sequence: str,
+    shuffled_sequences: list,
     cfg: dict,
-    rng: np.random.Generator,
 ) -> dict:
-    winsize = cfg["prediction"]["winsize"]
-    target_length = cfg["prediction"]["target_length"]
-    output_idx = cfg["prediction"]["output_idx"]
-    batch_size = cfg["prediction"]["batch_size"]
-    n_perm = cfg["shuffle"]["n_perm"]
-    smooth_window = cfg["prediction"].get("smooth_window", 1)
-    save_perm_profiles = cfg["save"].get("save_perm_profiles", False)
+    winsize = model.input_shape[1]
+    target_length = cfg["target_length"]
+    output_idx = cfg["output_idx"]
+    batch_size = cfg["batch_size"]
+    n_perm = len(shuffled_sequences)
+    smooth_window = cfg.get("smooth_window", 5)
+    save_perm_profiles = cfg["save_perm_profiles"]
 
     native_profile = predict_profile(
         model=model,
@@ -261,10 +250,10 @@ def analyze_sequence(
     native_amp = get_amplitude(native_profile)
 
     perm_amps = []
-    perm_profiles = [] if save_perm_profiles or cfg["plots"].get("show_perm_envelope", True) else None
+    perm_profiles = [] if save_perm_profiles or cfg.get("show_perm_envelope", True) else None
 
-    for _ in range(n_perm):
-        shuffled_seq = shuffle_sequence(sequence, rng)
+    t0 = time.time()
+    for cpt, shuffled_seq in enumerate(shuffled_sequences):
         shuffled_profile = predict_profile(
             model=model,
             seq=shuffled_seq,
@@ -279,6 +268,10 @@ def analyze_sequence(
 
         if perm_profiles is not None:
             perm_profiles.append(shuffled_profile)
+        mf.loadbar(
+            cpt, n_perm, t0, 
+            "Analyzing sequence " + header
+        )
 
     perm_amps = np.asarray(perm_amps, dtype=np.float32)
     perm_profiles = None if perm_profiles is None else np.asarray(perm_profiles, dtype=np.float32)
@@ -303,7 +296,7 @@ def save_sequence_results(result: dict, seq_dir: Path, cfg: dict) -> None:
     np.save(seq_dir / "native_profile.npy", result["native_profile"])
     np.save(seq_dir / "perm_amplitudes.npy", result["perm_amplitudes"])
 
-    if cfg["save"].get("save_perm_profiles", False) and result["perm_profiles"] is not None:
+    if cfg.get("save_perm_profiles", False) and result["perm_profiles"] is not None:
         np.save(seq_dir / "perm_profiles.npy", result["perm_profiles"])
 
     summary_keys = [
@@ -334,16 +327,11 @@ def main():
     copy_config(args.config, run_dir)
 
     model = load_model_from_config(cfg)
-    fasta_entries = read_fasta(cfg["input"]["fasta_path"])
-
+    fasta_entries = read_fasta(cfg["fasta_path"])
+    shutil.copy2(cfg["fasta_path"], run_dir / "sequences.fa")
     if len(fasta_entries) == 0:
-        raise ValueError(f"No FASTA entry found in {cfg['input']['fasta_path']}")
+        raise ValueError(f"No FASTA entry found in {cfg['fasta_path']}")
 
-    max_entries = cfg["input"].get("max_entries", None)
-    if max_entries is not None:
-        fasta_entries = fasta_entries[:max_entries]
-
-    rng = np.random.default_rng(cfg.get("seed", None))
 
     summary_rows = []
 
@@ -353,13 +341,22 @@ def main():
 
         seq_name = sanitize_name(header)
         seq_dir = run_dir / "raw" / seq_name
+        seq_dir.mkdir(parents=True, exist_ok=True)
+        
+        n_perm = cfg["n_perm"]
+        kmer_conservation = cfg.get("kmer_conservation", 3)
+        shuffled_sequences = [shuffle_sequence(sequence, k=kmer_conservation) for _ in range(n_perm)]
+
+        with open(seq_dir / "shuffled_sequences.fa", "w") as f:
+            for i, sseq in enumerate(shuffled_sequences):
+                f.write(f">{header}_shuffled_{i}\n{sseq}\n")
 
         result = analyze_sequence(
             model=model,
             header=header,
             sequence=sequence,
+            shuffled_sequences=shuffled_sequences,
             cfg=cfg,
-            rng=rng,
         )
 
         save_sequence_results(result, seq_dir, cfg)
@@ -368,16 +365,15 @@ def main():
             native_amp=result["native_amplitude"],
             perm_amps=result["perm_amplitudes"],
             seq_name=header,
-            outpath=run_dir / "plots" / f"{seq_name}_hist.png",
-            bins=cfg["plots"].get("hist_bins", 40),
+            outpath=run_dir / "plots" / f"{seq_name}_hist",
         )
 
         plot_profile(
             native_profile=result["native_profile"],
             perm_profiles=result["perm_profiles"],
             seq_name=header,
-            outpath=run_dir / "plots" / f"{seq_name}_profile.png",
-            show_perm_envelope=cfg["plots"].get("show_perm_envelope", True),
+            outpath=run_dir / "plots" / f"{seq_name}_profile",
+            show_perm_envelope=cfg.get("show_perm_envelope", True),
         )
 
         summary_rows.append(
