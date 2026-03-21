@@ -603,8 +603,11 @@ def localign(ref, sequences, n):
     return offsets
 
 def savefig(fname, figure=None):
+    if not isinstance(fname, str):
+        fname = str(fname)
+
     if figure is None:
         figure = plt
     
-    figure.savefig(fname +".svg")
+    figure.savefig(fname + ".svg")
     figure.savefig(fname + ".pdf", dpi=300)
