@@ -1,30 +1,25 @@
 seed: 42
 
-run:
-  output_root: "runs/satellite_shuffle"
-  experiment_name: "single_model_fasta"
 
-model:
-  model_path: "/chemin/vers/ton_modele.h5"
-  compile: false
+fasta_path: "/home/maxime/Nucleoseq/demo/sequences/satellites.fa"
 
-input:
-  fasta_path: "/chemin/vers/tes_satellites.fasta"
-  max_entries: null
+#Model
+model_path: "/home/maxime/Nucleoseq/demo/test/MNase_17chroms_CORRECTED_1.5prctCovered_globalWeightsOptim_20260303_142239/best.h5"
 
-prediction:
-  winsize: 2001
-  target_length: 3000
-  output_idx: 2
-  batch_size: 128
-  smooth_window: 10
+output_root: null #Default is model_path
+experiment_name: "synthetic_satellites"
 
-shuffle:
-  n_perm: 1000
 
-plots:
-  hist_bins: 40
-  show_perm_envelope: true
+target_length: 3000
+output_idx: 2
+batch_size: 1024
 
-save:
-  save_perm_profiles: false
+
+n_perm: 1000
+kmer_conservation: 2
+
+
+show_perm_envelope: true
+
+
+save_perm_profiles: true

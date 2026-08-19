@@ -7,7 +7,7 @@
 # GENERAL
 # -----------------------------------------------------
 project: Nucleoseq
-experiment_name: "Chemical_17chroms_CORRECTED_global_weights"
+experiment_name: "Chemical_17chroms_CORRECTED_global_weights_cnnsimple"
 output_dir: "demo/test"
 gpu_index: 0  # index of the GPU used (if available)
 workers: 4
@@ -29,7 +29,7 @@ data:
 # MODEL
 # -----------------------------------------------------
 model:
-  name: "Chemical_5H" 
+  name: "CNN_simple5H" 
   winsize: 2001
   batch_size: 512
   epochs: 100

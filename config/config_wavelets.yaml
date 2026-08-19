@@ -1,0 +1,22 @@
+# Config for src/wavelet_transform.py
+# Computes a genome-wide Continuous Wavelet Transform (CWT) periodicity track
+# from per-chromosome prediction/mutasome .npz files, and writes it as a single
+# bigWig. See Methods: "Continuous Wavelet Transform for Periodicity Detection".
+
+# Per-chromosome input files. Must contain "{chrom}" - filled in with each
+# chromosome number (e.g. "1_mutasomePREDICTION.npz" for chr1).
+input_template: "/home/maxime/data/mnase/train/full_genome_rmdense_A_16/full_genome_rmdense_1/{chrom}_mutasomePREDICTION.npz"
+
+chr: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+# Output bigWig path. NOTE: utils.create_bw() refuses to overwrite an existing
+# file - delete it manually first if you're re-running.
+output_file: "wavelets_pred_A16.bw"
+chrom_sizes_path: "data/sequences/mm10/mm10.chrom.sizes"
+
+# --- Continuous Wavelet Transform parameters ---
+wavelet: "cmor25-0.85"   # complex Morlet, bandwidth B=25, center frequency C=0.85
+min_period: 150          # bp - lower bound of the mono-/di-nucleosomal period range
+max_period: 220          # bp - upper bound
+# Controls scale resolution: scale step = scale_step_divisor * (max_scale - min_scale) / (max_period - min_period)
+scale_step_divisor: 10

@@ -1,4 +1,4 @@
-model_path: "/home/maxime/Nucleoseq/demo/test/Chemical_17chroms_CORRECTED_global_weights_20260304_205232/best.h5"
+model_path: "/home/maxime/Nucleoseq/demo/test/MNase_17chroms_CORRECTED_1.5prctCovered_globalWeightsOptim_20260303_142239/best.h5"
 output_idx: 2
 run_dir: #Default is model folder
 make_plot: True
