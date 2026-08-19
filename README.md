@@ -89,6 +89,9 @@ or follow the instructions at [meme-suite.org](https://meme-suite.org/meme/doc/i
 A GPU (with CUDA 11.2 / cuDNN 8.1, matching `environment.yml`) is strongly recommended for
 training and ISM — both run a CNN forward pass over the entire genome.
 
+`environment.yml` has been verified end-to-end (`conda env create`, GPU-enabled TensorFlow
+import, full import check, `pip check`) — see the comment at the top of the file for details.
+
 ---
 
 ## 📦 Getting the data
@@ -123,7 +126,9 @@ data/
 
 demo/
 ├── labels/                           # training label bigWigs (MNase-seq / chemical cleavage, public GEO accessions)
-└── test/                             # every training/ISM/XSTREME run lands here, one subdirectory per run
+└── test/
+    ├── crossmut.bw                   # cross-mutasome track (Zenodo, or regenerate via Phase 3 step 1)
+    └── ...                           # every training/ISM/XSTREME run lands here, one subdirectory per run
 ```
 
 ---
@@ -293,8 +298,10 @@ python src/build_nprs_fasta.py \
     --out_csv demo/test/nprs.csv
 ```
 (This also produces `crossmut.bw`, referenced as `crossmut_bw` in
-`notebooks/figures_new_clean.ipynb`'s `PATHS` dict — it's fully regeneratable from the two ISM
-tracks, so it doesn't need to be archived separately.)
+`notebooks/figures_new_clean.ipynb`'s `PATHS` dict. It's fully regeneratable from the two ISM
+tracks with the command above, but is also published on Zenodo alongside the models and
+prediction/ISM tracks — see [Getting the data](#-getting-the-data) — so you don't have to run
+the whole pipeline just to get this one file.)
 
 **2. Motif discovery with XSTREME** (external tool, not a repo script):
 ```bash
@@ -349,13 +356,16 @@ style; both notebooks load it automatically.
 
 ## 🧠 Methods & Architectures
 
-Two CNN architectures (`src/modeles.py`):
-1. **CNN_simple5H** — lightweight 3-layer CNN (32 filters, kernel lengths 3/10/20 bp), used for
-   MNase-seq.
-2. **Chemical_5H** — deeper (256→64→64 filters, kernel lengths 5/11/21 bp), used for
-   chemical-cleavage data.
+`src/modeles.py` defines two CNN architectures:
+1. **CNN_simple5H** — lightweight 3-layer CNN (32 filters, kernel lengths 3/10/20 bp).
+2. **Chemical_5H** — deeper (256→64→64 filters, kernel lengths 5/11/21 bp).
 
-Both: each convolution is followed by batch normalisation and max-pooling; multi-head output via
+The published models (both the MNase-seq and the chemical-cleavage one — see
+`config/config_train.yaml`'s `train_config_used.yaml` copies in their respective
+`demo/test/` run directories) use **Chemical_5H** for both datasets; only the training labels
+differ. `CNN_simple5H` is defined and available but not what the current published models use.
+
+Both architectures: each convolution is followed by batch normalisation and max-pooling; multi-head output via
 a dense layer + sigmoid; loss `L = MAE + (1 − Pearson r)` with bin-wise re-weighting
 (`src/losses.py`); trained on mm10 unique-mapping regions, genome-wide predictions inferred over
 sliding 2001 bp windows.
