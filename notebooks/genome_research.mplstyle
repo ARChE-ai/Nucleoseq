@@ -1,0 +1,52 @@
+# -----------------------------
+# Portable (no font install), SVG text editable
+# -----------------------------
+
+# Font (bundled with Matplotlib)
+font.family: DejaVu Sans
+font.size: 8.5
+axes.titlesize: 10
+axes.labelsize: 9
+xtick.labelsize: 8
+ytick.labelsize: 8
+legend.fontsize: 8
+
+# Axes
+axes.linewidth: 0.8
+axes.labelweight: normal
+axes.grid: False
+
+# Ticks
+xtick.direction: out
+ytick.direction: out
+xtick.major.size: 4
+ytick.major.size: 4
+xtick.major.width: 0.8
+ytick.major.width: 0.8
+
+# Lines and markers
+lines.linewidth: 1.0
+lines.markersize: 4
+
+# Figure / save
+figure.dpi: 300
+savefig.dpi: 600
+savefig.transparent: False
+savefig.bbox: tight
+savefig.pad_inches: 0.05
+
+# Legend
+legend.frameon: False
+
+# Color cycle (colorblind-friendly)
+axes.prop_cycle: cycler('color', ['#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf'])
+
+# PDF/PS font embedding (keeps text as text, embedded as TrueType)
+pdf.fonttype: 42
+ps.fonttype: 42
+
+# SVG: keep text as text (editable)
+svg.fonttype: none
+
+# Optional: ensure minus sign renders nicely
+axes.unicode_minus: True
