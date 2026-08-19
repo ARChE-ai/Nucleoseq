@@ -150,18 +150,23 @@ run_one_motif() {
     echo
   } > "$log"
 
-  # Run FIMO (append stdout/stderr to log)
+  # Run FIMO (append stderr to log, save TSV to fimo.tsv directly to save space!)
   set +e
-  fimo --oc "$mdir" \
+  fimo --text \
        --verbosity "$VERBOSITY" \
        --thresh "$THRESH" \
        --max-stored-scores "$MAX_STORED" \
        $NO_QVALUE \
        $SKIP_MATCHED_SEQ \
        --motif "$m" \
-       "$MEME" "$FA" >> "$log" 2>&1
+       "$MEME" "$FA" > "$mdir/fimo.tsv" 2>> "$log"
   status=$?
   set -e
+
+  # Security: If FIMO crashes, remove the empty file to avoid biasing Python
+  if [[ $status -ne 0 ]]; then
+    rm -f "$mdir/fimo.tsv"
+  fi
 
   # Check output
   if [[ $status -ne 0 ]]; then
@@ -182,17 +187,29 @@ run_one_motif() {
 }
 
 ###############################################################################
-# MAIN LOOP
+# MAIN LOOP (PARALLELIZED)
 ###############################################################################
 total=$(wc -l < "$MOTIF_LIST")
 i=0
+max_jobs=28
+
+echo "------------------------------------------------------------"
+echo "[INFO] Lancement de $total motifs sur $max_jobs processus (coeurs) en parallèle..."
+echo "------------------------------------------------------------"
 
 while read -r m; do
   i=$((i+1))
-  echo "------------------------------------------------------------"
-  echo "[INFO] $i / $total : $m"
-  run_one_motif "$m" || true
+
+  
+  run_one_motif "$m" &
+  
+  
+  if [[ $(jobs -r -p | wc -l) -ge $max_jobs ]]; then
+    wait -n
+  fi
 done < "$MOTIF_LIST"
+
+wait
 
 echo "------------------------------------------------------------"
 echo "[DONE] Finished."
