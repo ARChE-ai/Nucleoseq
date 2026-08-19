@@ -8,7 +8,7 @@ archives/
 *.bigwig
 *.csv
 *.fasta
-
+*.bed
 
 # --- NumPy archives ---
 *.npz
@@ -22,3 +22,16 @@ py38.tar.gz
 JASPAR2026_CORE_non-redundant_pfms_meme.txt
 data/
 demo/
+wget-log
+archives/
+FAIR_audit_report.md
+
+# Claude Code local settings - never publish
+.claude/
+
+# Generated figure outputs - reproducible from notebooks/, not source
+notebooks/*.pdf
+notebooks/*.svg
+notebooks/FIGTEST/
+notebooks/figures_new/
+notebooks/xtsreme_clusters.tex
