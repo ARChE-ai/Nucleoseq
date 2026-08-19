@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software or the associated models/data, please cite both the paper and this repository."
+title: "TODO: paper title (Nucleoseq / distance_svg)"
+authors:
+  - family-names: Christophe
+    given-names: Maxime
+    email: maxime.christophe1@gmail.com
+repository-code: "https://github.com/ARChE-ai/Nucleoseq"
+license: CC-BY-4.0
+version: v1.0.0
+date-released: 2026-09-01
+doi:
+preferred-citation:
+  type: article
+  title: ""
+  authors:
+    - family-names: Christophe
+      given-names: Maxime
+    - family-names: Altamirano
+      given-names: Luis
+    - family-names: Navarro Gil
+      given-names: Pablo
+    - family-names: Mozziconacci
+      given-names: Julien
+      email: julien.mozziconacci@mnhn.fr
+  journal:
+  year: 2026
+  doi:
