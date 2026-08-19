@@ -11,6 +11,8 @@ import time
 from pathlib import Path
 import pandas as pd
 import datetime
+import sys
+plt.style.use('config/genome_research.mplstyle')
 
 def prediction(model, sequences, winsize, output_idx=2):
     if len(sequences) == 0:
@@ -87,12 +89,128 @@ def predict_kmers(model,
     results = np.array(results)
     return results
 
+def generate_plots(save_file, plot_dir, reps):
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    
+    kmers_file = np.load(save_file)
+    kmersynth = {k:kmers_file[k] for k in kmers_file.files}
+    gc_content = np.mean(np.sum(kmersynth['kmers'][:, :, [1, 2]], axis=2), axis=1)
+
+    score = np.mean(
+        np.abs(
+            kmersynth['predictions'] - kmersynth['bg_predictions'][None, ...]
+            ),
+            axis=-1
+        )
+
+    preds_over_bg = np.mean(kmersynth["predictions"], axis=2)
+    bg_mean = np.mean(kmersynth["bg_predictions"], axis=0)
+
+    kmer_names = ["".join(mf.BASES[np.argmax(x, axis=1)]) for x in kmersynth["kmers"]]
+
+    n_rep, n_kmer, n_bg = score.shape
+
+    df = pd.DataFrame({
+        "nb_rep": np.repeat(reps, n_kmer * n_bg),
+        "kmer": np.tile(np.repeat(kmer_names, n_bg), n_rep),
+        "bg": np.tile([f"bg_{i}" for i in range(n_bg)], n_rep * n_kmer),
+        "score": score.reshape(-1),
+        "gc_content" : np.tile(np.repeat(gc_content, n_bg), n_rep)
+    })
+    df.to_csv(plot_dir / "summary.csv", index=False)
+
+    # VIOLIN PLOT
+    fig, ax = plt.subplots(figsize=(2, 2))
+
+    # Groupes
+    labels = sorted(df["gc_content"].unique())
+    groups = [
+        df[df["gc_content"] == g]["score"].values
+        for g in labels
+    ]
+
+
+    parts = ax.violinplot(groups, showmedians=True)
+    for pc in parts["bodies"]:
+        pc.set_facecolor("#87CEEB")
+        pc.set_edgecolor("black")
+        pc.set_alpha(0.7)
+
+    parts["cmedians"].set_color("red")
+
+    # Axes
+    ax.set_xticks(range(1, len(labels) + 1))
+    ax.set_xticklabels(labels, rotation=45)
+    ax.tick_params(fontsize=10)
+    
+    ax.set_title("Score distribution by GC content")
+    ax.set_xlabel("GC content", fontsize=10)
+    ax.set_ylabel("Score", fontsize=10)
+
+    plt.tight_layout()
+    mf.savefig(
+        str(plot_dir / "violinplot"),
+        fig
+    )
+    plt.close(fig)
+
+    metaplot_path = (plot_dir / "kmers_metaplots")
+    metaplot_path.mkdir(parents=True, exist_ok=True)
+    colors = plt.cm.Blues(np.linspace(0.5, 1, len(reps)))
+    print()
+    print("Generating plots...")
+    print()
+    t0 = time.time()
+    for i in range(preds_over_bg.shape[1]):
+        fig = plt.figure()
+        kmer_name = "".join(mf.BASES[np.argmax(kmersynth["kmers"][i], axis=1)])
+        plt.title(kmer_name)
+        plt.ylim(0, 1)
+        plt.plot(bg_mean, color="k", linestyle=":", linewidth=0.5, label="background")
+        for j, pred in enumerate(preds_over_bg[:, i]):
+            plt.plot(preds_over_bg[j, i], label = reps[j], alpha=0.8, color=colors[j])
+        # plt.legend()
+
+        mf.savefig(
+            str(metaplot_path / kmer_name),
+            fig
+        )
+        plt.close(fig)
+        mf.loadbar(i, preds_over_bg.shape[1], t0=t0)
+
+
 if __name__== "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", required=True, type=str, help="Path to YAML config file"
+        "--config", required=False, type=str, help="Path to YAML config file"
+    )
+    parser.add_argument(
+        "--plot_only", required=False, type=str, help="Path to an existing run directory (or .npz file) to regenerate plots from"
     )
     args = parser.parse_args()
+
+    if args.plot_only:
+        run_dir = Path(args.plot_only)
+        if run_dir.is_file() and run_dir.suffix == ".npz":
+            save_file = run_dir
+            run_dir = run_dir.parent
+        else:
+            save_file = run_dir / "synthetic_kmers.npz"
+
+        config_path = run_dir / "kmersynth_config.yaml"
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config file not found in {run_dir}. It's needed for reps parameter.")
+        with open(config_path, "r") as f:
+            cfg = yaml.safe_load(f)
+        reps = cfg.get("repetitions_number")
+        
+        plot_dir = run_dir / "kmers_plots"
+        generate_plots(save_file, plot_dir, reps)
+        print("Done regenerating plots.")
+        sys.exit(0)
+
+    if not args.config:
+        parser.error("--config is required unless --plot_only is used")
 
     with open(args.config, "r") as f:
         cfg = yaml.safe_load(f)
@@ -158,92 +276,4 @@ if __name__== "__main__":
 
     if make_plots:
         plot_dir = (run_dir / "kmers_plots")
-        plot_dir.mkdir(parents=True, exist_ok=True)
-        
-        kmers_file = np.load(save_file)
-        kmersynth = {k:kmers_file[k] for k in kmers_file.files}
-        gc_content = np.mean(np.sum(kmersynth['kmers'][:, :, [1, 2]], axis=2), axis=1)
-
-        score = np.mean(
-            np.abs(
-                kmersynth['predictions'] - kmersynth['bg_predictions'][None, ...]
-                ),
-                axis=-1
-            )
-
-        preds_over_bg = np.mean(kmersynth["predictions"], axis=2)
-        bg_mean = np.mean(kmersynth["bg_predictions"], axis=0)
-
-        kmer_names = ["".join(mf.BASES[np.argmax(x, axis=1)]) for x in kmersynth["kmers"]]
-
-        n_rep, n_kmer, n_bg = score.shape
-
-        df = pd.DataFrame({
-            "nb_rep": np.repeat(reps, n_kmer * n_bg),
-            "kmer": np.tile(np.repeat(kmer_names, n_bg), n_rep),
-            "bg": np.tile([f"bg_{i}" for i in range(n_bg)], n_rep * n_kmer),
-            "score": score.reshape(-1),
-            "gc_content" : np.tile(np.repeat(gc_content, n_bg), n_rep)
-        })
-        df.to_csv(plot_dir / "summary.csv", index=False)
-
-        # VIOLIN PLOT
-        fig, ax = plt.subplots(figsize=(6, 6))
-
-        # Groupes
-        labels = sorted(df["gc_content"].unique())
-        groups = [
-            df[df["gc_content"] == g]["score"].values
-            for g in labels
-        ]
-
-
-        parts = ax.violinplot(groups, showmedians=True)
-        for pc in parts["bodies"]:
-            pc.set_facecolor("#87CEEB")
-            pc.set_edgecolor("black")
-            pc.set_alpha(0.7)
-
-        parts["cmedians"].set_color("red")
-
-        # Axes
-        ax.set_xticks(range(1, len(labels) + 1))
-        ax.set_xticklabels(labels, rotation=45)
-
-        ax.set_title("Score distribution by GC content")
-        ax.set_xlabel("GC content")
-        ax.set_ylabel("Score")
-
-        plt.tight_layout()
-        mf.savefig(
-            str(plot_dir / "violinplot"),
-            fig
-        )
-        plt.close(fig)
-
-        metaplot_path = (plot_dir / "kmers_metaplots")
-        metaplot_path.mkdir(parents=True, exist_ok=True)
-        colors = plt.cm.Blues(np.linspace(0.5, 1, len(reps)))
-        print()
-        print("Generating plots...")
-        print()
-        t0 = time.time()
-        for i in range(preds_over_bg.shape[1]):
-            fig = plt.figure()
-            kmer_name = "".join(mf.BASES[np.argmax(kmersynth["kmers"][i], axis=1)])
-            plt.title(kmer_name)
-            plt.ylim(0.2, 0.8)
-            plt.plot(bg_mean, color="k", linestyle=":", linewidth=0.5, label="background")
-            for j, pred in enumerate(preds_over_bg[:, i]):
-                plt.plot(preds_over_bg[j, i], label = reps[j], alpha=0.8, color=colors[j])
-            plt.legend()
-
-            mf.savefig(
-                str(metaplot_path / kmer_name),
-                fig
-            )
-            plt.close(fig)
-            mf.loadbar(i, preds_over_bg.shape[1], t0=t0)
-            
-
-
+        generate_plots(save_file, plot_dir, reps)
