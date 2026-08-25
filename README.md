@@ -208,7 +208,7 @@ python src/build_sequence_bw.py \
    |---|---|
    | `data.seq_path` | path to the genome-wide sequence bigWig from Phase 0 step 3 |
    | `data.label_path` | path to the training-label bigWig (e.g. `demo/labels/sparse_A_16_gaussiansmoothed.bw` for MNase-seq, or the chemical-cleavage equivalent) |
-   | `data.mask_train` / `mask_val` | list of bigWig paths defining which genomic positions are usable (e.g. mappability, blacklist) |
+   | `data.mask_train` / `mask_val` | list of bigWig paths defining which genomic positions are usable (position set to 1; position at 0 for excluded positions) (e.g. mappability, blacklist) |
    | `model.name` | `CNN_simple5H` or `Chemical_5H` (see [Methods](#-methods--architectures)) |
    | `model.winsize` | input window size, default 2001 bp |
    | `training.train_chr` / `val_chr` | chromosome numbers for train/validation split |
