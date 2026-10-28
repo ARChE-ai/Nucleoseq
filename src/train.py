@@ -57,6 +57,8 @@ if __name__ == "__main__":
 
     # GENERAL
     random_seed = int(cfg.get("random_seed", 42))
+    tf.random.set_seed(random_seed)
+    np.random.seed(random_seed)  # also seeds the pandas shuffles in the generator
     gpu_index = cfg.get("gpu_index", 0)
     workers = int(cfg.get("workers", -1))
 
