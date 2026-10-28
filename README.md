@@ -391,4 +391,4 @@ sliding 2001 bp windows.
 
 - **License**: [CC-BY-SA 4.0](LICENSE)
 - **Citation**: see [`CITATION.cff`](CITATION.cff)
-- **Contact**: maxime.christophe1@gmail.com (Maxime Christophe)
+- **Contact**: Maxime Christophe, via [GitHub issues](https://github.com/ARChE-ai/Nucleoseq/issues)
