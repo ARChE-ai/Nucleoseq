@@ -31,7 +31,6 @@ def mse_mutasome_opt(
     write_batch=5_000_000,
     steps = [-500, -250, 0, 250, 500]
 ):
-    # Faire varier le nombre de steps
     """
     Compute mutasome around position (corresponding to size b around the position)
     -> to compute full sequence position

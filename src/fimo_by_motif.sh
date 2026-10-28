@@ -11,7 +11,7 @@ NO_QVALUE="--no-qvalue"
 SKIP_MATCHED_SEQ=""
 
 ###############################################################################
-# PARSING ARGUMENTS NOMMÉS
+# PARSE NAMED ARGUMENTS
 ###############################################################################
 MEME=""
 FA=""
@@ -56,33 +56,30 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "[ERROR] Argument inconnu : $1"
+      echo "[ERROR] Unknown argument: $1"
       exit 1
       ;;
   esac
 done
 
 ###############################################################################
-# VÉRIFICATION DES ARGUMENTS OBLIGATOIRES
+# CHECK REQUIRED ARGUMENTS
 ###############################################################################
 if [[ -z "$MEME" || -z "$FA" || -z "$OUT" ]]; then
-  echo "[ERROR] Les arguments --meme, --fa et --out sont obligatoires."
+  echo "[ERROR] Arguments --meme, --fa and --out are required."
   echo "Usage: $0 --meme FILE --fa FILE --out DIR [--thresh X] [--max-stored N] [--verbosity N] [--skip-matched-sequence] [--qvalue]"
   exit 1
 fi
 
 ###############################################################################
-# PREP + LOG DE LA COMMANDE
+# PREP + COMMAND LOG
 ###############################################################################
 mkdir -p "$OUT"
 LOGDIR="$OUT/_logs"
 mkdir -p "$LOGDIR"
 
 CMDLOG="$OUT/command.sh"
-printf '%q ' "$0" "$@" > /tmp/_cmd_args.$$  # optionnel si tu veux garder les args initiaux
-rm -f /tmp/_cmd_args.$$
-
-# meilleure solution : reconstruire la commande avec les variables résolues
+# Rebuild the command with resolved variables
 {
   printf '%q ' "$0"
   printf -- '--meme %q ' "$MEME"
@@ -194,7 +191,7 @@ i=0
 max_jobs=28
 
 echo "------------------------------------------------------------"
-echo "[INFO] Lancement de $total motifs sur $max_jobs processus (coeurs) en parallèle..."
+echo "[INFO] Running $total motifs on $max_jobs parallel processes (cores)..."
 echo "------------------------------------------------------------"
 
 while read -r m; do

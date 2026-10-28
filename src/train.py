@@ -174,7 +174,7 @@ if __name__ == "__main__":
     ckpt_epoch = ModelCheckpoint(
         filepath=os.path.join(run_dir, "epochs", "epoch_{epoch:03d}.h5"),
         save_best_only=False,
-        save_weights_only=True,  # mets True si tu veux juste les poids (fichiers plus légers)
+        save_weights_only=True,  # weights only (lighter files)
         verbose=0,
     )
 

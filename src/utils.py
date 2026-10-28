@@ -151,7 +151,7 @@ def choose_test_stat(data1, data2, alpha_normality=0.05, alpha_variance=0.05):
     else:
         stars = "ns"
 
-    # Résumé
+    # Summary
     result["test"] = test_used
     result["p_value"] = p
     result["stars"] = stars

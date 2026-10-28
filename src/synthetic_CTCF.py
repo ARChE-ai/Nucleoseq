@@ -49,7 +49,7 @@ def make_prediction(model, synthetic_seq, winsize=2001, batch_size=2048, verbose
     num_win_per_seq = batches.shape[1]
     batch_per_pred = batch_size // num_win_per_seq
 
-    # Prédiction
+    # Prediction
     result = []
     t0 = time.time()
     for i in range(0, batches.shape[0], batch_per_pred):
@@ -358,7 +358,7 @@ def plot_clustering(df_amp, config):
 def main():
     # Setup directories
     if config["run_dir"] is None:
-        # Si model_dir pointe vers un fichier (comme best.h5), prendre le dossier parent
+        # If model_dir points to a file (e.g. best.h5), use its parent directory
         base_dir = config["model_dir"] if os.path.isdir(config["model_dir"]) else os.path.dirname(config["model_dir"])
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         config["run_dir"] = os.path.join(base_dir, f"synthetic_CTCF_{timestamp}")

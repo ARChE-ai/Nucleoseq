@@ -140,24 +140,24 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
                     if centers.size == 0:
                         continue
 
-                    # On lit un bloc unique couvrant tous les centres (+heads)
+                    # Read a single block covering all centers (+heads)
                     start = int(centers.min() + min_head)
                     end   = int(centers.max() + max_head + 1)
 
                     signal = bw.values(chrom, start, end, numpy=True)
                     signal = np.nan_to_num(signal, nan=0.0).astype(np.float32)
 
-                    # Indices absolus -> indices dans "signal"
+                    # Absolute indices -> indices in "signal"
                     # shape: (n_centers, n_heads)
                     idx = (centers[:, None] + step[None, :] - start).astype(np.int64)
 
-                    # Récupération vectorisée
+                    # Vectorized lookup
                     y = signal[idx]   # (n_centers, n_heads)
                     vals.append(y)
 
             vals = np.vstack(vals)  # (total_windows, n_heads)
             vals = np.round(np.nan_to_num(np.concatenate(vals), nan=0.0), 2)
-            # option : ignorer les zéros
+            # ignore zero labels
             mask = vals != 0
             vals_nz = vals[mask]
 
