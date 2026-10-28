@@ -15,35 +15,37 @@ import pandas as pd
 
 class KDNAmulti_bw(tf.keras.utils.Sequence):
     """
-    Generate batches for keras.fit() from bigWig and one-hot sequences.
+    Generate batches for keras.fit() from bigWig sequence and label tracks.
 
     Parameters
     ----------
-    seq : list[str]
-        Paths to npz/np arrays (one-hot, one per chromosome; loaded via loadnp).
+    seq : str
+        Path to the genome-wide integer-encoded sequence bigWig
+        (built by src/build_sequence_bw.py; -1 = undefined base).
     lab : str
         Path to bigWig label file (coverage/signal).
     chr : Iterable[int]
         Chromosome numbers to use (e.g. [1,2,3,19]).
     winsize : int
         Window size (odd), default 2001.
-    frac : int
-        Number of training windows per epoch (NOT a fraction).
+    dist_between_windows : int
+        Minimum distance (bp) between two consecutive window centers.
     reverse : str
-        "", "random", "reverse", or "augmentation".
-    truncate : int
-        Number of bp to discard from start (e.g. 3_000_000).
+        Stored but currently unused.
     batch_size : int
-    mask : callable or None
-        A function that returns positions to mask for a chromosome (partial prefilled).
+    mask : list[str]
+        Paths to mask bigWigs; a position is kept only if it is non-zero in all masks.
     headsteps : np.ndarray
         Offsets for multi-head predictions (default [-500, -250, 0, 250, 500]).
-    weights : bool
-        If True, return sample weights; else return ones.
-    index_selection : str
-        "", "local", "no-overlap", or "validation".
-    process_fun : callable or None
-        Optional preprocessing function applied to label array for each chr.
+    weights : str
+        "auto" (per-bin weights from the label distribution over the whole set),
+        "batch" (balanced weights computed per batch); any other value returns ones.
+    rundir : str
+        Run directory (used_train_index.csv is written there when training=True).
+    workers : int
+        Stored but currently unused.
+    training : bool
+        If True, save and shuffle the window index (also at each epoch end).
     """
 
     def __init__(
@@ -127,46 +129,6 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
             self.index_epoch.to_csv(f"{self.rundir}/used_train_index.csv", index=False)
             self.index_epoch = self.index_epoch.sample(frac=1).reset_index(drop=True)
         
-        if self.weights == "auto":
-            vals = []
-            step = np.asarray(self.step)
-            min_head, max_head = step.min(), step.max()
-
-            with pbw.open(self.bw) as bw:
-                for chrom, dfc in self.index_epoch.groupby("chrom", sort=False):
-                    centers = dfc["center"].to_numpy(np.int64)
-                    if centers.size == 0:
-                        continue
-
-                    # On lit un bloc unique couvrant tous les centres (+heads)
-                    start = int(centers.min() + min_head)
-                    end   = int(centers.max() + max_head + 1)
-
-                    signal = bw.values(chrom, start, end, numpy=True)
-                    signal = np.nan_to_num(signal, nan=0.0).astype(np.float32)
-
-                    # Indices absolus -> indices dans "signal"
-                    # shape: (n_centers, n_heads)
-                    idx = (centers[:, None] + step[None, :] - start).astype(np.int64)
-
-                    # Récupération vectorisée
-                    y = signal[idx]   # (n_centers, n_heads)
-                    vals.append(y)
-
-            vals = np.vstack(vals)  # (total_windows, n_heads)
-            vals = np.round(np.nan_to_num(np.concatenate(vals), nan=0.0), 2)
-            # option : ignorer les zéros
-            mask = vals != 0
-            vals_nz = vals[mask]
-
-            unique, counts = np.unique(vals_nz, return_counts=True)
-            N = vals_nz.size
-            K = unique.size
-            w = N / (K * counts)
-
-            self.weight_map = dict(zip(unique.tolist(), w.astype(np.float32).tolist()))
-            self.weight_zero = 0.0
-
         if self.weights == "auto":
             vals = []
             step = np.asarray(self.step)
