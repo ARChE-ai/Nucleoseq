@@ -102,11 +102,8 @@ don't try to route any of them through git:
 1. **Public reference data** (mm10 genome, RepeatMasker, JASPAR, ENCODE tracks, refTSS) —
    download scripts / instructions, not redistributed here.
 2. **Our trained models + genome-wide prediction/ISM tracks** — published as a separate Zenodo
-   data deposit (DOI: *TODO once published*), because they're tens of GB.
+   data deposit (DOI: [10.5281/zenodo.22013958](https://doi.org/10.5281/zenodo.22013958)), because they're tens of GB.
 3. **Anything you regenerate yourself** by running the phases below on your own sequencing data.
-
-If a `setup_download.sh` / Zenodo record isn't set up yet in your copy of this repo, ask the
-maintainer, or see `GIT_ZENODO_SUBMISSION_PLAN.md` for the publishing plan.
 
 Expected layout once populated (paths referenced throughout this README and in
 `notebooks/figures_new_clean.ipynb`'s `PATHS` dict):
@@ -198,8 +195,7 @@ python src/build_sequence_bw.py \
 
 ## Phase 1 — Training a model
 
-1. Copy a template config and edit the paths (`config_train.yaml` currently has an absolute
-   `/home/maxime/...`-style path baked in from the original run — replace with yours):
+1. Copy a template config and edit the paths:
    ```bash
    cp config/config_train.yaml config/my_train.yaml
    ```
@@ -365,8 +361,8 @@ The published models (both the MNase-seq and the chemical-cleavage one — see
 `demo/test/` run directories) use **Chemical_5H** for both datasets; only the training labels
 differ. `CNN_simple5H` is defined and available but not what the current published models use.
 
-Both architectures: each convolution is followed by batch normalisation and max-pooling; multi-head output via
-a dense layer + sigmoid; loss `L = MAE + (1 − Pearson r)` with bin-wise re-weighting
+Both architectures: each convolution is followed by max-pooling and batch normalisation; multi-head output via
+a dense layer + sigmoid; loss `L = MAE + (1 − Pearson r)`, both terms computed over the whole batch
 (`src/losses.py`); trained on mm10 unique-mapping regions, genome-wide predictions inferred over
 sliding 2001 bp windows.
 
