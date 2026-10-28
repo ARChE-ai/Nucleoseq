@@ -7,15 +7,16 @@
 # GENERAL
 # -----------------------------------------------------
 project: Nucleoseq
-experiment_name: "Chemical_17chroms_CORRECTED_global_weights_cnnsimple"
+experiment_name: "Chemical_17chroms"
 output_dir: "demo/test"
 gpu_index: 0  # index of the GPU used (if available)
 workers: 4
+random_seed: 42
 # -----------------------------------------------------
 # DATA PATHS
 # -----------------------------------------------------
 data:
-  # One-hot encoded sequences (npz files named chr{N}.npz)
+  # Genome-wide integer-encoded sequence bigWig (built by src/build_sequence_bw.py)
   seq_path: "demo/sequences/mm10.bw"
 
   # Training target: bigWig coverage files
@@ -29,7 +30,7 @@ data:
 # MODEL
 # -----------------------------------------------------
 model:
-  name: "CNN_simple5H" 
+  name: "Chemical_5H"
   winsize: 2001
   batch_size: 512
   epochs: 100
@@ -54,5 +55,4 @@ training:
 # -----------------------------------------------------
 # - Paths are relative to the repository root.
 # - Model and losses are defined in `modeles.py` and `losses.py`.
-# - ISM computation is performed via `mutasome_opt.py`.
-# - For reproducibility, specify a fixed random seed in both Python and TensorFlow.
+# - ISM computation is performed via `ism.py`.
