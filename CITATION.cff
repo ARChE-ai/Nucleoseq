@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or the associated models/data, please cite both the paper and this repository."
-title: "TODO: paper title (Nucleoseq / distance_svg)"
+title: "Nucleoseq"
 authors:
   - family-names: Christophe
     given-names: Maxime
@@ -9,10 +9,10 @@ repository-code: "https://github.com/ARChE-ai/Nucleoseq"
 license: CC-BY-4.0
 version: v1.0.0
 date-released: 2026-09-01
-doi:
+doi: 10.5281/zenodo.22013958
 preferred-citation:
   type: article
-  title: ""
+  title: "The mammalian genome is punctuated by regularly spaced nucleosome islands"
   authors:
     - family-names: Christophe
       given-names: Maxime
@@ -23,6 +23,6 @@ preferred-citation:
     - family-names: Mozziconacci
       given-names: Julien
       email: julien.mozziconacci@mnhn.fr
-  journal:
+  journal: bioRxiv
   year: 2026
-  doi:
+  doi: 10.64898/2026.09.30.755582

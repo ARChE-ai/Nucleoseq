@@ -29,7 +29,7 @@ for arg in "$@"; do
   esac
 done
 
-mkdir -p "$DATA_DIR"/{sequences,rnaseq,atac,dnase,refTSS_3.3,JASPAR_TFBs_2024,modeles,ISM_tracks,predicted_nucleosome_occupancy}
+mkdir -p "$DATA_DIR"/{sequences,rnaseq,atac,dnase/labels,refTSS_3.3,JASPAR_TFBs_2024,CTCF/all,ZNF384,chemical,modeles,ISM_tracks,predicted_nucleosome_occupancy}
 mkdir -p "$DEMO_DIR/test"
 
 # ------------------------------------------------------------------------------
@@ -65,7 +65,6 @@ if [ "$SKIP_PUBLIC" = false ]; then
   # --- JASPAR2026 CORE PFMs (used to build config/jaspar_clusters2026.tsv derivatives) ---
   wget -c -O "${REPO_ROOT}/JASPAR2026_CORE_non-redundant_pfms_meme.txt" \
     https://jaspar.elixir.no/download/data/2026/CORE/JASPAR2026_CORE_non-redundant_pfms_meme.txt
-  # TODO: confirm this exact JASPAR download-API path is still current before relying on it.
 
   # --- JASPAR TFBS predictions, mm10, CTCF (mencius.uio.no) ---
   # Note 2026 release only ships mm39, not mm10 - see conversation. Keep 2024/mm10 for now:
@@ -73,21 +72,33 @@ if [ "$SKIP_PUBLIC" = false ]; then
     "https://mencius.uio.no/JASPAR/JASPAR_TFBSs/2024/mm10/MA0139.2.tsv.gz"
 
   # --- refTSS 3.3 (mouse) ---
-  # TODO: fill in the exact refTSS_v3.3_mouse download URLs for:
-  #   refTSS_v3.3_mouse_coordinate.mm10.bed, TSS.classification.mm10,
-  #   refTSS_v3.3_mouse_annotation.txt  (http://reftss.riken.jp/reftss/ downloads page)
+  REFTSS=https://reftss.riken.jp/datafiles/3.3/mouse
+  wget -c -P "${DATA_DIR}/refTSS_3.3" "${REFTSS}/refTSS_v3.3_mouse_coordinate.mm10.bed.gz"
+  wget -c -P "${DATA_DIR}/refTSS_3.3" "${REFTSS}/tss_classification/TSS.classification.mm10.gz"
+  wget -c -P "${DATA_DIR}/refTSS_3.3" "${REFTSS}/gene_annotation/refTSS_v3.3_mouse_annotation.txt.gz"
+  gunzip -kf "${DATA_DIR}"/refTSS_3.3/*.gz
 
-  # --- ENCODE RNA-seq / ATAC-seq / DNase-seq bigwigs ---
-  # TODO: fill in the exact ENCFF accession download URLs (https://www.encodeproject.org/files/<ENCFF...>/@@download/<ENCFF...>.bigWig)
-  #   for ENCFF373ZMQ (RNA-seq minus), ENCFF907JEV (RNA-seq plus), ENCFF672DJH (DNase-seq),
-  #   plus the two GSM3719303/GSM3719304 ATAC-seq tracks referenced in your PATHS dict.
+  # --- ENCODE (mESC ES-E14): RNA-seq ENCSR000CWC, DNase-seq ENCSR000CMW, ZNF384 ChIP-seq ENCSR000ERV ---
+  ENCODE=https://www.encodeproject.org/files
+  wget -c -O "${DATA_DIR}/rnaseq/ENCFF907JEV_plusStrand.bigWig" "${ENCODE}/ENCFF907JEV/@@download/ENCFF907JEV.bigWig"
+  wget -c -O "${DATA_DIR}/rnaseq/ENCFF373ZMQ_minusStrand.bigWig" "${ENCODE}/ENCFF373ZMQ/@@download/ENCFF373ZMQ.bigWig"
+  wget -c -O "${DATA_DIR}/dnase/labels/DNase_ENCFF672DJH.bw" "${ENCODE}/ENCFF672DJH/@@download/ENCFF672DJH.bigWig"
+  wget -c -O "${DATA_DIR}/ZNF384/ENCFF043AHA.bigWig" "${ENCODE}/ENCFF043AHA/@@download/ENCFF043AHA.bigWig"
 
-  # --- Raw assay data (GEO) — used to train/label the models, not to reproduce figures ---
-  # GSE122589 (MNase-seq, Institut Pasteur) and GSE82127 (chemical cleavage, Voong et al. 2017)
-  # TODO: fill in specific GSM/supplementary-file URLs for whichever raw tracks your training
-  # pipeline needs, if a reviewer must rebuild the labels from scratch.
+  # --- ATAC-seq mESC (GEO GSE129673) ---
+  wget -c -P "${DATA_DIR}/atac" https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM3719nnn/GSM3719303/suppl/GSM3719303_ATAC_1_RPKM.bw
+  wget -c -P "${DATA_DIR}/atac" https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM3719nnn/GSM3719304/suppl/GSM3719304_ATAC_2_RPKM.bw
 
-  echo "Public downloads done. Items marked TODO above still need your exact URLs filled in."
+  # --- CTCF ChIP-seq (GEO GSE131356, Owens et al. 2019) ---
+  # TODO: data/CTCF/all/ctcf.bed (peaks with score) - specify which GSE131356 sample it was built from.
+
+  # --- Raw assay data (GEO) - used to train/label the models, not to reproduce figures ---
+  # Chemical cleavage (GSE82127, Voong et al. 2016): NCP scores on mm9 (lift over to mm10, see paper Methods)
+  wget -c -P "${DATA_DIR}/chemical" https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2183nnn/GSM2183909/suppl/GSM2183909_Chemical_NCPscore.txt.gz
+  # MNase-seq (GSE122589, Festuccia et al. 2019): no processed files on GEO, raw reads only (SRA).
+  # Label sparse_A_16 was built from MNase_A_16_1-3 (GSM3475355, GSM3475356, GSM3475357).
+
+  echo "Public downloads done. Items marked TODO above are not downloaded automatically."
 fi
 
 # ------------------------------------------------------------------------------
@@ -95,25 +106,18 @@ fi
 # ------------------------------------------------------------------------------
 if [ "$SKIP_ZENODO" = false ]; then
   echo "== [3/3] Downloading Zenodo data deposit =="
-  ZENODO_RECORD_ID="TODO_FILL_IN_AFTER_PUBLISHING"   # e.g. 1234567 from your Zenodo record URL
+  ZENODO_RECORD_ID="22013958"   # https://doi.org/10.5281/zenodo.22013958
 
-  if [ "$ZENODO_RECORD_ID" = "TODO_FILL_IN_AFTER_PUBLISHING" ]; then
-    echo "Skipping Zenodo download: set ZENODO_RECORD_ID in this script once the deposit" \
-         "from GIT_ZENODO_SUBMISSION_PLAN.md step 2B is published." >&2
-  else
-    pip install --quiet zenodo_get
-    zenodo_get "$ZENODO_RECORD_ID" -o "${DATA_DIR}/_zenodo_download"
-    # Move each file to its expected location - adjust once the deposit's actual filenames
-    # are known (zenodo_get preserves whatever names you uploaded them with):
-    # mv "${DATA_DIR}/_zenodo_download/MNaseseq.h5" "${DATA_DIR}/modeles/"
-    # mv "${DATA_DIR}/_zenodo_download/chemical_cleavage.h5" "${DATA_DIR}/modeles/"
-    # mv "${DATA_DIR}/_zenodo_download/MNaseseq_ism_mm10.bw" "${DATA_DIR}/ISM_tracks/"
-    # mv "${DATA_DIR}/_zenodo_download/ChemicalCleavage_ism_mm10.bw" "${DATA_DIR}/ISM_tracks/"
-    # mv "${DATA_DIR}/_zenodo_download/MNaseseq_prediction_mm10.bw" "${DATA_DIR}/predicted_nucleosome_occupancy/"
-    # mv "${DATA_DIR}/_zenodo_download/ChemicalCleavage_prediction_mm10.bw" "${DATA_DIR}/predicted_nucleosome_occupancy/"
-    # mv "${DATA_DIR}/_zenodo_download/crossmut.bw" "${DEMO_DIR}/test/crossmut.bw"
-  fi
+  pip install --quiet zenodo_get
+  zenodo_get "$ZENODO_RECORD_ID" -o "${DATA_DIR}/_zenodo_download"
+  # Move each file to its expected location (file names as in the Zenodo deposit)
+  mv "${DATA_DIR}/_zenodo_download/MNaseseq.h5" "${DATA_DIR}/modeles/"
+  mv "${DATA_DIR}/_zenodo_download/chemical_cleavage.h5" "${DATA_DIR}/modeles/"
+  mv "${DATA_DIR}/_zenodo_download/MNaseseq_ism_mm10.bw" "${DATA_DIR}/ISM_tracks/"
+  mv "${DATA_DIR}/_zenodo_download/ChemicalCleavage_ism_mm10.bw" "${DATA_DIR}/ISM_tracks/"
+  mv "${DATA_DIR}/_zenodo_download/MNaseseq_prediction_mm10.bw" "${DATA_DIR}/predicted_nucleosome_occupancy/"
+  mv "${DATA_DIR}/_zenodo_download/ChemicalCleavage_prediction_mm10.bw" "${DATA_DIR}/predicted_nucleosome_occupancy/"
+  mv "${DATA_DIR}/_zenodo_download/crossmut.bw" "${DEMO_DIR}/test/crossmut.bw"
 fi
 
-echo "Done. See GIT_ZENODO_SUBMISSION_PLAN.md for what still needs to happen before all" \
-     "TODOs above can be resolved (Zenodo deposit must exist first)."
+echo "Done. Items marked TODO above still need their exact URLs filled in."
