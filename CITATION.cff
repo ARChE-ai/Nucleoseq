@@ -6,7 +6,7 @@ authors:
     given-names: Maxime
     email: maxime.christophe1@gmail.com
 repository-code: "https://github.com/ARChE-ai/Nucleoseq"
-license: CC-BY-4.0
+license: CC-BY-SA-4.0
 version: v1.0.0
 date-released: 2026-09-01
 doi: 10.5281/zenodo.22013958

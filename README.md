@@ -2,7 +2,7 @@
 
 ![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![TensorFlow 2.5](https://img.shields.io/badge/TensorFlow-2.5-orange.svg)
-![License CC-BY 4.0](https://img.shields.io/badge/License-CC--BY_4.0-green.svg)
+![License CC-BY-SA 4.0](https://img.shields.io/badge/License-CC--BY--SA_4.0-green.svg)
 
 **Deep-learning models and genome-wide nucleosome occupancy predictions**
 
@@ -43,7 +43,7 @@ discovery/enrichment — so it can be reproduced from scratch on your own machin
 ├── notebooks/                # Jupyter notebooks used to build the paper's figures
 ├── src/                     # Core pipeline scripts (training, ISM, motif analysis)
 ├── environment.yml          # Unified conda + pip environment definition
-├── LICENSE                  # CC-BY 4.0
+├── LICENSE                  # CC-BY-SA 4.0
 └── CITATION.cff             # Citation metadata
 ```
 
@@ -389,6 +389,6 @@ sliding 2001 bp windows.
 
 ## 📜 Citation, License & Contact
 
-- **License**: [CC-BY 4.0](LICENSE)
+- **License**: [CC-BY-SA 4.0](LICENSE)
 - **Citation**: see [`CITATION.cff`](CITATION.cff)
 - **Contact**: maxime.christophe1@gmail.com (Maxime Christophe)
