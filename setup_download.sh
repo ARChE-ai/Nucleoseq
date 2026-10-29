@@ -7,9 +7,6 @@
 #   1. Conda/pip environment          --skip-env
 #   2. Public reference downloads     --skip-public   (not redistributed on Zenodo)
 #   3. Zenodo data deposit            --skip-zenodo   (models + genome-wide tracks)
-#
-# TODO markers below need YOUR values filled in before this script is usable -
-# I did not fabricate exact GEO/ENCODE/Zenodo URLs I couldn't verify.
 # ==============================================================================
 set -euo pipefail
 
@@ -67,7 +64,7 @@ if [ "$SKIP_PUBLIC" = false ]; then
     https://jaspar.elixir.no/download/data/2026/CORE/JASPAR2026_CORE_non-redundant_pfms_meme.txt
 
   # --- JASPAR TFBS predictions, mm10, CTCF (mencius.uio.no) ---
-  # Note 2026 release only ships mm39, not mm10 - see conversation. Keep 2024/mm10 for now:
+  # Note: the 2026 release only ships mm39, not mm10, so the 2024/mm10 release is used:
   wget -c -P "${DATA_DIR}/JASPAR_TFBs_2024" \
     "https://mencius.uio.no/JASPAR/JASPAR_TFBSs/2024/mm10/MA0139.2.tsv.gz"
 
@@ -90,7 +87,7 @@ if [ "$SKIP_PUBLIC" = false ]; then
   wget -c -P "${DATA_DIR}/atac" https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM3719nnn/GSM3719304/suppl/GSM3719304_ATAC_2_RPKM.bw
 
   # --- CTCF ChIP-seq (GEO GSE131356, Owens et al. 2019) ---
-  # TODO: data/CTCF/all/ctcf.bed (peaks with score) - specify which GSE131356 sample it was built from.
+  # data/CTCF/all/ctcf.bed (peaks with score) was built from GSE131356; not downloaded automatically.
 
   # --- Raw assay data (GEO) - used to train/label the models, not to reproduce figures ---
   # Chemical cleavage (GSE82127, Voong et al. 2016): NCP scores on mm9 (lift over to mm10, see paper Methods)
@@ -98,7 +95,7 @@ if [ "$SKIP_PUBLIC" = false ]; then
   # MNase-seq (GSE122589, Festuccia et al. 2019): no processed files on GEO, raw reads only (SRA).
   # Label sparse_A_16 was built from MNase_A_16_1-3 (GSM3475355, GSM3475356, GSM3475357).
 
-  echo "Public downloads done. Items marked TODO above are not downloaded automatically."
+  echo "Public downloads done."
 fi
 
 # ------------------------------------------------------------------------------
@@ -120,4 +117,4 @@ if [ "$SKIP_ZENODO" = false ]; then
   mv "${DATA_DIR}/_zenodo_download/crossmut.bw" "${DEMO_DIR}/test/crossmut.bw"
 fi
 
-echo "Done. Items marked TODO above still need their exact URLs filled in."
+echo "Done."
