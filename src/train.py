@@ -17,7 +17,7 @@ import utils as mf
 import numpy as np
 import pandas as pd
 from generator_opt_determinist import KDNAmulti_bw
-from losses import get_loss, correlate, mae_cor
+from losses import get_loss, correlate, mae_cor, weighted_correlate, weighted_mae_cor
 from modeles import create_model
 
 # import wandb
@@ -109,6 +109,10 @@ if __name__ == "__main__":
     if int(tfimport_dict["ver"].split(".")[1]) < 11:
         opt = LossScaleOptimizer(opt)
     metrics = [mae_cor, correlate]
+    # weighted_mae_cor gets the weights packed in y_true (not as Keras sample weights)
+    pack_weights = loss_name == "weighted_mae_cor"
+    if pack_weights:
+        metrics = [weighted_mae_cor, weighted_correlate]
 
     if len(tfimport_dict["devices"]) > 1:
         with tfimport_dict["strategy"].scope():
@@ -144,6 +148,7 @@ if __name__ == "__main__":
         workers=workers,
         training=False,
         dist_between_windows=val_dist,
+        pack_weights=pack_weights,
     )
 
     print("TRAINING GENERATOR")
@@ -160,6 +165,7 @@ if __name__ == "__main__":
         workers=workers,
         training=True,
         dist_between_windows=train_dist,
+        pack_weights=pack_weights,
     )
 
     mcp_save = ModelCheckpoint(

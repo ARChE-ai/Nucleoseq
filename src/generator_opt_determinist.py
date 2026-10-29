@@ -46,6 +46,9 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
         Stored but currently unused.
     training : bool
         If True, save and shuffle the window index (also at each epoch end).
+    pack_weights : bool
+        If True, return (x, [labels | weights]) for losses that apply the weights
+        themselves (weighted_mae_cor); else return (x, labels, weights).
     """
 
     def __init__(
@@ -63,6 +66,7 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
         rundir: str = "",
         workers: int = 10,
         training: bool = True,
+        pack_weights: bool = False,
     ):
         self.bw = lab
         self.chr = [f"chr{x}" for x in chr]
@@ -81,6 +85,7 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
         self.workers = workers
         self.win_dist = dist_between_windows
         self.training = training
+        self.pack_weights = pack_weights
 
         self.select_chr()
 
@@ -233,7 +238,7 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
                 weights[idx_weights] = compute_sample_weight(
                     "balanced", np.round(labels[idx_weights], 2).ravel()
                 )
-            return sequences, labels, weights
+            return self._output(sequences, labels, weights)
         
         elif self.weights == "auto":
             labs = np.round(labels, 2)
@@ -248,7 +253,12 @@ class KDNAmulti_bw(tf.keras.utils.Sequence):
                 w_flat = np.fromiter((self.weight_map.get(v, 1.0) for v in flat), dtype=np.float32)
                 weights[nz] = w_flat.reshape((-1,))
 
-            return sequences, labels, weights
+            return self._output(sequences, labels, weights)
         
         else:
-            return sequences, labels, np.ones(labels.shape, dtype=np.float32)
+            return self._output(sequences, labels, np.ones(labels.shape, dtype=np.float32))
+
+    def _output(self, sequences, labels, weights):
+        if self.pack_weights:
+            return sequences, np.concatenate([labels, weights], axis=1)
+        return sequences, labels, weights
