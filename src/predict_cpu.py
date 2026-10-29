@@ -5,7 +5,7 @@ Usage:
     python src/predict_cpu.py --model chemical --fasta tests/example_chr18.fa --out pred.tsv
 
 --model is "chemical" or "mnase" (published model downloaded from Zenodo record 22013958,
-cached in ~/.keras/models/) or a path to a local .h5 file.
+cached in ~/.keras/datasets/) or a path to a local .h5 file.
 Writes one line per predicted base (position<TAB>prediction, 1-based position in the
 input sequence). The first and last winsize//2 bases are not predicted (incomplete context).
 """
