@@ -19,6 +19,7 @@ discovery/enrichment — so it can be reproduced from scratch on your own machin
 ## 📖 Table of Contents
 - [Repository structure](#️-repository-structure)
 - [Installation](#-installation)
+- [Quick CPU test](#-quick-cpu-test)
 - [Getting the data](#-getting-the-data)
 - [Pipeline overview](#-pipeline-overview)
 - [Phase 0 — Data preparation](#phase-0--data-preparation)
@@ -61,6 +62,7 @@ binaries — reference genome, bigWig tracks, trained models, run outputs. See
 | `generator_opt_determinist.py` | Keras data generator used by `train.py` (`KDNAmulti_bw`) |
 | `losses.py` | Custom loss (`MAE + (1 - Pearson r)`) and metrics |
 | `ism.py` | In-silico mutagenesis + genome-wide prediction, per chromosome |
+| `predict_cpu.py` | Minimal CPU prediction from a FASTA with a published model (downloaded from Zenodo) |
 | `npzToBw.py` | Assemble per-chromosome `.npz` arrays (predictions or ISM scores) into one genome-wide bigWig |
 | `build_sequence_bw.py` | Build the genome-wide integer-encoded sequence bigWig used by `train.py` |
 | `build_nprs_fasta.py` | Build the candidate-region FASTA (`nprs.fasta`) fed to XSTREME, from two models' ISM tracks |
@@ -91,6 +93,23 @@ training and ISM — both run a CNN forward pass over the entire genome.
 
 `environment.yml` has been verified end-to-end (`conda env create`, GPU-enabled TensorFlow
 import, full import check, `pip check`) — see the comment at the top of the file for details.
+
+---
+
+## ⚡ Quick CPU test
+
+No GPU and no genome download needed: `src/predict_cpu.py` downloads a published model (4.8 MB)
+from Zenodo, checks its md5, and predicts nucleosome occupancy along a FASTA sequence.
+
+```bash
+conda activate nucleoseq
+python src/predict_cpu.py --fasta tests/example_chr18.fa --out pred.tsv               # chemical cleavage model
+python src/predict_cpu.py --model mnase --fasta tests/example_chr18.fa --out pred.tsv # MNase-seq model
+```
+
+`tests/example_chr18.fa` is 5 kb of mm10 (chr18:30,000,001-30,005,000, validation chromosome).
+The output TSV has one line per predicted base (`position<TAB>prediction`, 1-based); the first and
+last 1000 bp are not predicted (incomplete 2001 bp window). Runs in about a minute on a laptop CPU.
 
 ---
 
